@@ -109,7 +109,9 @@ class Fit:
 
         for epoch in range(self.epochs):
             loss_g, loss_d, real_score, fake_score = 0, 0, 0, 0
-            for real_data, _ in tqdm(self.train_dl):
+            pbar = tqdm(total=len(self.train_dl), desc=f"Epoch: {epoch + 1}/{self.epochs}", unit="it")
+            i = 0
+            for real_data, _ in self.train_dl:
                 latent_data = torch.randn(real_data.shape[0], real_data.shape[1], device=self.device)
                 loss_d, real_score, fake_score = TrainDiscriminator(real_data, latent_data, opt_d, self.generator,
                                                                     self.discriminator,
@@ -118,14 +120,19 @@ class Fit:
 
                 loss_g = TrainGenerator(latent_data, opt_g, self.generator, self.discriminator, self.device,
                                         self.minority_class).train()
+                pbar.update(1)
+                pbar.set_postfix_str(f"Step {i + 1}/{len(self.train_dl)}, G Loss {loss_g:.4f}, D Loss {loss_d:.4f}, Real Score {real_score:.4f}, Fake Score {fake_score:.4f}")
+                i += 1
+
+            pbar.close()
 
             losses_g.append(loss_g)
             losses_d.append(loss_d)
             real_scores.append(real_score)
             fake_scores.append(fake_score)
 
-            print("Epoch [{}/{}], loss_g: {:.4f}, loss_d: {:.4f}, real_score: {:.4f}, fake_score: {:.4f}".format(
-                epoch + 1, self.epochs, loss_g, loss_d, real_score, fake_score))
+            # print("Epoch [{}/{}], loss_g: {:.4f}, loss_d: {:.4f}, real_score: {:.4f}, fake_score: {:.4f}".format(
+            #     epoch + 1, self.epochs, loss_g, loss_d, real_score, fake_score))
 
         return losses_g, losses_d, real_scores, fake_scores
 

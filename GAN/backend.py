@@ -1,7 +1,7 @@
 import torch
 
 
-def get_default_device(force_to_cpu=False):
+def get_default_device(force_to_cpu=False, force_skip_mps=False):
     if force_to_cpu:
         print("Set default device to cpu.")
         return torch.device('cpu')
@@ -9,7 +9,7 @@ def get_default_device(force_to_cpu=False):
     if torch.cuda.is_available():
         print("Set default device to cuda.")
         return torch.device('cuda')
-    elif torch.backends.mps.is_available():
+    elif torch.backends.mps.is_available() and not force_skip_mps:
         print("Set default device to mps.")
         return torch.device('mps')
     elif torch.xpu.is_available():

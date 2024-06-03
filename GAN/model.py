@@ -6,10 +6,10 @@ class Generator(nn.Module):
     def __init__(self, z_dim, im_dim, hidden_dim):
         super(Generator, self).__init__()
         self.generator = nn.Sequential(
-            self.get_generator_block(z_dim, hidden_dim),
-            self.get_generator_block(hidden_dim, hidden_dim * 2),
-            self.get_generator_block(hidden_dim * 2, hidden_dim * 4),
-            self.get_generator_block(hidden_dim * 4, hidden_dim * 8),
+            self._get_generator_block(z_dim, hidden_dim),
+            self._get_generator_block(hidden_dim, hidden_dim * 2),
+            self._get_generator_block(hidden_dim * 2, hidden_dim * 4),
+            self._get_generator_block(hidden_dim * 4, hidden_dim * 8),
             nn.Linear(hidden_dim * 8, im_dim),
             nn.Sigmoid()
         )
@@ -33,9 +33,9 @@ class Discriminator(nn.Module):
     def __init__(self, im_dim, hidden_dim):
         super(Discriminator, self).__init__()
         self.discriminator = nn.Sequential(
-            self.get_discriminator_block(im_dim, hidden_dim * 4),
-            self.get_discriminator_block(hidden_dim * 4, hidden_dim * 2),
-            self.get_discriminator_block(hidden_dim * 2, hidden_dim),
+            self._get_discriminator_block(im_dim, hidden_dim * 4),
+            self._get_discriminator_block(hidden_dim * 4, hidden_dim * 2),
+            self._get_discriminator_block(hidden_dim * 2, hidden_dim),
             nn.Linear(hidden_dim, 1)
         )
 

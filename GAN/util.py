@@ -1,5 +1,7 @@
 from torch import nn
 import torch
+from tqdm.auto import tqdm
+import backend
 
 
 class TrainGenerator:
@@ -81,5 +83,46 @@ class TrainDiscriminator:
         return loss.item(), real_score, fake_score
 
 
+class Fit:
+    def __init__(self, epochs, lr, discriminator, generator, train_dl, device, minority_class, majority_class):
+        self.epochs = epochs
+        self.lr = lr
+        self.discriminator = discriminator
+        self.generator = generator
+        self.train_dl = train_dl
+        self.device = device
+        self.minority_class = minority_class
+        self.majority_class = majority_class
 
+    def fit(self):
+        backend.empty_cache(self.device)
 
+        losses_g = list()
+        losses_d = list()
+        real_scores = list()
+        fake_scores = list()
+
+        opt_d = torch.optim.Adam(self.discriminator.parameters(), lr=self.lr, betas=(0.5, 0.999))
+        opt_g = torch.optim.Adam(self.generator.parameters(), lr=self.lr, betas=(0.5, 0.999))
+
+        for epoch in range(self.epochs):
+            loss_g, loss_d, real_score, fake_score = 0, 0, 0, 0
+            for real_data, _ in tqdm(self.train_dl):
+                latent_data = torch.randn(real_data.shape[0], real_data.shape[1], device=self.device)
+                loss_d, real_score, fake_score = TrainDiscriminator(real_data, latent_data, opt_d, self.generator,
+                                                                    self.discriminator,
+                                                                    self.device, self.minority_class,
+                                                                    self.majority_class).train()
+
+                loss_g = TrainGenerator(latent_data, opt_g, self.generator, self.discriminator, self.device,
+                                        self.minority_class).train()
+
+            losses_g.append(loss_g)
+            losses_d.append(loss_d)
+            real_scores.append(real_score)
+            fake_scores.append(fake_score)
+
+            print("Epoch [{}/{}], loss_g: {:.4f}, loss_d: {:.4f}, real_score: {:.4f}, fake_score: {:.4f}".format(
+                epoch + 1, self.epochs, loss_g, loss_d, real_score, fake_score))
+
+        return losses_g, losses_d, real_scores, fake_scores

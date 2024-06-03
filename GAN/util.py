@@ -1,7 +1,9 @@
 from torch import nn
 import torch
 from tqdm.auto import tqdm
-import backend
+from .backend import to_device, DeviceDataLoader, empty_cache
+from torch.utils.data import TensorDataset, DataLoader
+from .model import Generator, Discriminator
 
 
 class TrainGenerator:
@@ -95,7 +97,7 @@ class Fit:
         self.majority_class = majority_class
 
     def fit(self):
-        backend.empty_cache(self.device)
+        empty_cache(self.device)
 
         losses_g = list()
         losses_d = list()
@@ -126,3 +128,21 @@ class Fit:
                 epoch + 1, self.epochs, loss_g, loss_d, real_score, fake_score))
 
         return losses_g, losses_d, real_scores, fake_scores
+
+
+def get_generator(X_train, X_real, y_real, device, lr, epochs, batch_size, minority_class, majority_class):
+
+    my_dataset = TensorDataset(torch.Tensor(X_real), torch.Tensor(y_real))
+
+    train_dataloader = DataLoader(my_dataset, batch_size=batch_size, shuffle=True)
+    train_dataloader = DeviceDataLoader(train_dataloader, device)
+
+    gen = Generator(X_train.shape[1], X_train.shape[1], 128)
+    disc = Discriminator(X_train.shape[1], 128)
+
+    generator = to_device(gen.generator, device)
+    discriminator = to_device(disc.discriminator, device)
+
+    Fit(epochs, lr, discriminator, generator, train_dataloader, device, minority_class, majority_class).fit()
+
+    return generator

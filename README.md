@@ -9,3 +9,4 @@ GAN Model Collapse
 * pandas
 * imbalanced-learn
 * statsmodels
+* matplotlib

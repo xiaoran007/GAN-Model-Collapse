@@ -1,7 +1,7 @@
 from torch import nn
 import torch
 from tqdm.auto import tqdm
-from .backend import to_device, DeviceDataLoader, empty_cache
+from .backend import DeviceDataLoader, empty_cache
 from torch.utils.data import TensorDataset, DataLoader
 from .model import Generator, Discriminator
 
@@ -126,6 +126,8 @@ class Fit:
 
             pbar.close()
 
+            self._save_model(epoch=epoch)
+
             losses_g.append(loss_g)
             losses_d.append(loss_d)
             real_scores.append(real_score)
@@ -136,6 +138,14 @@ class Fit:
 
         return losses_g, losses_d, real_scores, fake_scores
 
+    def _save_model(self, epoch):
+        checkpoint: dict = {
+            "generator": self.generator.cpu().state_dict(),
+            "discriminator": self.discriminator.cpu().state_dict().copy(),
+            "random_state": torch.get_rng_state().clone()
+        }
+        torch.save(checkpoint, f"checkpoint/checkpoint_{epoch}.pth")
+
 
 def get_generator(X_train, X_real, y_real, device, lr, epochs, batch_size, minority_class, majority_class):
 
@@ -144,11 +154,11 @@ def get_generator(X_train, X_real, y_real, device, lr, epochs, batch_size, minor
     train_dataloader = DataLoader(my_dataset, batch_size=batch_size, shuffle=True)
     train_dataloader = DeviceDataLoader(train_dataloader, device)
 
-    gen = Generator(X_train.shape[1], X_train.shape[1], 128)
-    disc = Discriminator(X_train.shape[1], 128)
+    generator = Generator(X_train.shape[1], X_train.shape[1], 128)
+    discriminator = Discriminator(X_train.shape[1], 128)
 
-    generator = to_device(gen.generator, device)
-    discriminator = to_device(disc.discriminator, device)
+    generator.to(device)
+    discriminator.to(device)
 
     Fit(epochs, lr, discriminator, generator, train_dataloader, device, minority_class, majority_class).fit()
 

@@ -6,13 +6,13 @@ def get_default_device(force_to_cpu=False, force_skip_mps=False):
         print("Set default device to cpu.")
         return torch.device('cpu')
 
-    if torch.cuda.is_available():
+    if check_cuda():
         print("Set default device to cuda.")
         return torch.device('cuda')
-    elif torch.backends.mps.is_available() and not force_skip_mps:
+    elif check_mps() and not force_skip_mps:
         print("Set default device to mps.")
         return torch.device('mps')
-    elif torch.xpu.is_available():
+    elif check_xpu():
         print("Set default device to xpu.")
         return torch.device('xpu')
     else:
@@ -54,3 +54,32 @@ class DeviceDataLoader:
         """Number of batches"""
         return len(self.dl)
 
+
+def check_cuda():
+    try:
+        if torch.cuda.is_available():
+            return True
+        else:
+            return False
+    except AttributeError:
+        return False
+
+
+def check_mps():
+    try:
+        if torch.backends.mps.is_available():
+            return True
+        else:
+            return False
+    except AttributeError:
+        return False
+
+
+def check_xpu():
+    try:
+        if torch.xpu.is_available():
+            return True
+        else:
+            return False
+    except AttributeError:
+        return False

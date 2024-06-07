@@ -59,7 +59,8 @@ X_real, y_real = GANs_two_class_real_data(X_train, y_train)
 print(f"real data size: {len(y_real)}")
 # generator_G = get_generator(X_train, X_real, y_real, device, lr, epochs, batch_size, 1, 0)
 
-generator, discriminator = load_checkpoint(epochs-1)
+# generator, discriminator = load_checkpoint(epochs-1)
+generator, discriminator = load_checkpoint(50)
 generator.eval()
 
 minor, major = get_minor_major(y_train)
@@ -73,7 +74,6 @@ print(len(output))
 X = X_real
 y = y_real
 
-# Perform t-SNE
 tsne = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=100)
 X_embedded = tsne.fit_transform(X)
 

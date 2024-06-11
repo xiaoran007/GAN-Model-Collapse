@@ -4,6 +4,8 @@ from tqdm.auto import tqdm
 from .backend import DeviceDataLoader, empty_cache
 from torch.utils.data import TensorDataset, DataLoader
 from .model import Generator, Discriminator
+from DatasetsLoader import Datasets_list
+import os
 
 
 class TrainGenerator:
@@ -86,7 +88,7 @@ class TrainDiscriminator:
 
 
 class Fit:
-    def __init__(self, epochs, lr, discriminator, generator, train_dl, device, minority_class, majority_class):
+    def __init__(self, epochs, lr, discriminator, generator, train_dl, device, minority_class, majority_class, dataset_name):
         self.epochs = epochs
         self.lr = lr
         self.discriminator = discriminator
@@ -95,6 +97,7 @@ class Fit:
         self.device = device
         self.minority_class = minority_class
         self.majority_class = majority_class
+        self.dataset_name = dataset_name
 
     def fit(self):
         empty_cache(self.device)
@@ -144,15 +147,21 @@ class Fit:
             "discriminator": self.discriminator.cpu().state_dict().copy(),
             "random_state": torch.get_rng_state().clone()
         }
-        torch.save(checkpoint, f"checkpoint/checkpoint_{epoch}.pth")
+        torch.save(checkpoint, f"checkpoint/{self.dataset_name}/checkpoint_{epoch}.pth")
 
 
-def get_generator(X_train, X_real, y_real, device, lr, epochs, batch_size, minority_class, majority_class):
+def get_generator(X_train, X_real, y_real, device, lr, epochs, batch_size, minority_class, majority_class, dataset_name):
 
     my_dataset = TensorDataset(torch.Tensor(X_real), torch.Tensor(y_real))
 
     train_dataloader = DataLoader(my_dataset, batch_size=batch_size, shuffle=True)
     train_dataloader = DeviceDataLoader(train_dataloader, device)
+
+    assert dataset_name in Datasets_list
+    if os.path.exists(f"checkpoint/{dataset_name}"):
+        pass
+    else:
+        os.mkdir(f"checkpoint/{dataset_name}")
 
     generator = Generator(X_train.shape[1], X_train.shape[1], 128)
     discriminator = Discriminator(X_train.shape[1], 128)
@@ -160,6 +169,6 @@ def get_generator(X_train, X_real, y_real, device, lr, epochs, batch_size, minor
     generator.to(device)
     discriminator.to(device)
 
-    Fit(epochs, lr, discriminator, generator, train_dataloader, device, minority_class, majority_class).fit()
+    Fit(epochs, lr, discriminator, generator, train_dataloader, device, minority_class, majority_class, dataset_name).fit()
 
     return generator

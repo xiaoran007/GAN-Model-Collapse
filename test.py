@@ -26,10 +26,10 @@ def GANs_two_class_real_data(X_train, y_train):  # Defining the real data for GA
     return X_real, y_real
 
 
-def load_checkpoint(name):
+def load_checkpoint(name, dataset_name):
     generator = Generator(X_train.shape[1], X_train.shape[1], 128)
     discriminator = Discriminator(X_train.shape[1], 128)
-    checkpoint = torch.load(f"checkpoint/checkpoint_{name}.pth")
+    checkpoint = torch.load(f"checkpoint/{dataset_name}/checkpoint_{name}.pth")
     generator.load_state_dict(checkpoint['generator'])
     discriminator.load_state_dict(checkpoint['discriminator'])
     return generator, discriminator
@@ -57,10 +57,10 @@ device = get_default_device(force_to_cpu=False, force_skip_mps=True)
 print(f"data size: {len(y_train)}")
 X_real, y_real = GANs_two_class_real_data(X_train, y_train)
 print(f"real data size: {len(y_real)}")
-# generator_G = get_generator(X_train, X_real, y_real, device, lr, epochs, batch_size, 1, 0)
+generator_G = get_generator(X_train, X_real, y_real, device, lr, epochs, batch_size, 1, 0, dataset_name="PredictTerm")
 
-# generator, discriminator = load_checkpoint(epochs-1)
-generator, discriminator = load_checkpoint(50)
+generator, discriminator = load_checkpoint(epochs-1, dataset_name="PredictTerm")
+# generator, discriminator = load_checkpoint(50)
 generator.eval()
 
 minor, major = get_minor_major(y_train)

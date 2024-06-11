@@ -57,7 +57,7 @@ device = get_default_device(force_to_cpu=False, force_skip_mps=True)
 print(f"data size: {len(y_train)}")
 X_real, y_real = GANs_two_class_real_data(X_train, y_train)
 print(f"real data size: {len(y_real)}")
-# generator_G = get_generator(X_train, X_real, y_real, device, lr, epochs, batch_size, 1, 0, dataset_name="PredictTerm")
+generator_G = get_generator(X_train, X_real, y_real, device, lr, epochs, batch_size, 1, 0, dataset_name="PredictTerm")
 #
 # generator, discriminator = load_checkpoint(epochs-1, dataset_name="PredictTerm")
 generator, discriminator = load_checkpoint(50, dataset_name="PredictTerm")

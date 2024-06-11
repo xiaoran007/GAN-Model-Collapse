@@ -148,6 +148,8 @@ class Fit:
             "random_state": torch.get_rng_state().clone()
         }
         torch.save(checkpoint, f"checkpoint/{self.dataset_name}/checkpoint_{epoch}.pth")
+        self.generator.to(self.device)
+        self.discriminator.to(self.device)
 
 
 def get_generator(X_train, X_real, y_real, device, lr, epochs, batch_size, minority_class, majority_class, dataset_name):

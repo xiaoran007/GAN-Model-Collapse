@@ -1,5 +1,6 @@
 # checkpoint
 *.pth
+*.png
 
 # Jet Brains
 .idea

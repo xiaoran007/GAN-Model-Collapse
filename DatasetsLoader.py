@@ -28,6 +28,7 @@ def print_datasets_list():
 
 class Dataset:
     def __init__(self, dataset_name):
+        assert dataset_name in Datasets_list
         self.DatasetName = dataset_name
         self.Loader = None
 

@@ -1,3 +1,6 @@
+# checkpoint
+*.pth
+
 # Jet Brains
 .idea
 

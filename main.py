@@ -41,11 +41,27 @@ class Tsne:
         discriminator.load_state_dict(checkpoint['discriminator'])
         return generator, discriminator
 
+    def _pre_trained(self):
+        try:
+            with open(f"checkpoint/{self.dataset_name}/checkpoints.json", "r") as f:
+                config = json.load(f)
+            if self.epochs == config["epochs"] and self.batch_size == config["batch_size"] and self.lr == config["lr"]:
+                reuse = True
+            else:
+                reuse = False
+        except Exception as e:
+            reuse = False
+
+        return reuse
+
     def fit(self):
-        get_generator(self.X_train, self.X_real, self.y_real, self.device, self.lr, self.epochs, self.batch_size, 1, 0, dataset_name=self.dataset_name)
-        with open(f"checkpoint/{self.dataset_name}/checkpoints.json", "w") as f:
-            cp_range = self.epochs - 1
-            json.dump(cp_range, f)
+        if not self._pre_trained():
+            get_generator(self.X_train, self.X_real, self.y_real, self.device, self.lr, self.epochs, self.batch_size, 1, 0, dataset_name=self.dataset_name)
+            with open(f"checkpoint/{self.dataset_name}/checkpoints.json", "w") as f:
+                config = {"epochs": self.epochs, "lr": self.lr, "batch_size": self.batch_size}
+                json.dump(config, f)
+        else:
+            print("Found pre-trained model, skipping training")
 
     def draw_and_save(self, epoch):
         assert epoch in range(self.epochs)
@@ -59,8 +75,13 @@ class Tsne:
         GANs_noise = torch.randn((self.X_real.shape[0]), (self.X_real.shape[1]), device=self.device)
         output = generator(GANs_noise.float().to(self.device)).cpu().detach().numpy()
 
-        real_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=100).fit_transform(self.X_real)
-        generated_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=100).fit_transform(output)
+        if self.X_real.shape[0] <= 150:
+            perplexity = self.X_real.shape[0] / 2
+        else:
+            perplexity = 100
+
+        real_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(self.X_real)
+        generated_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(output)
 
         print(trustworthiness(self.X_real, real_data, n_neighbors=5))
         print(trustworthiness(output, generated_data, n_neighbors=5))
@@ -76,9 +97,11 @@ class Tsne:
         plt.show()
 
 
-obj = Tsne(dataset_name="CreditRisk", device=get_default_device(force_skip_mps=True))
-obj.fit()
-obj.draw_and_save(epoch=50)
-obj.draw_and_save(epoch=100)
-obj.draw_and_save(epoch=149)
+if __name__ == "__main__":
+    obj = Tsne(dataset_name="Africa", device=get_default_device(force_skip_mps=True))
+    obj.fit()
+    obj.draw_and_save(epoch=10)
+    obj.draw_and_save(epoch=50)
+    obj.draw_and_save(epoch=100)
+    obj.draw_and_save(epoch=149)
 

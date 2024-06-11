@@ -98,10 +98,11 @@ class Tsne:
 
 
 if __name__ == "__main__":
-    obj = Tsne(dataset_name="Africa", device=get_default_device(force_skip_mps=True))
-    obj.fit()
-    obj.draw_and_save(epoch=10)
-    obj.draw_and_save(epoch=50)
-    obj.draw_and_save(epoch=100)
-    obj.draw_and_save(epoch=149)
+    for i in DatasetsLoader.Datasets_list:
+        obj = Tsne(dataset_name=i, device=get_default_device(force_skip_mps=True))
+        obj.fit()
+        obj.draw_and_save(epoch=10)
+        obj.draw_and_save(epoch=50)
+        obj.draw_and_save(epoch=100)
+        obj.draw_and_save(epoch=149)
 

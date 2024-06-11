@@ -39,7 +39,7 @@ class Tsne:
         checkpoint = torch.load(f"checkpoint/{self.dataset_name}/checkpoint_{epoch}.pth")
         generator.load_state_dict(checkpoint['generator'])
         discriminator.load_state_dict(checkpoint['discriminator'])
-        return generator, discriminator
+        return generator.to(self.device), discriminator.to(self.device)
 
     def _pre_trained(self):
         try:
@@ -99,6 +99,7 @@ class Tsne:
 
 if __name__ == "__main__":
     for i in DatasetsLoader.Datasets_list:
+        print("Start training for dataset: ", i)
         obj = Tsne(dataset_name=i, device=get_default_device(force_skip_mps=True))
         obj.fit()
         obj.draw_and_save(epoch=10)

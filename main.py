@@ -7,9 +7,11 @@ from sklearn.manifold import trustworthiness
 from myutil import split_dataset_random, GANs_two_class_real_data
 import json
 import os
+from imblearn.over_sampling import SMOTE
+from sklearn.utils import resample
 
 
-class Tsne:
+class GANTsne:
     def __init__(self, dataset_name, device):
         self.dataset_name = dataset_name
         self.lr = 0.0002
@@ -90,20 +92,70 @@ class Tsne:
         plt.scatter(real_data[:, 0], real_data[:, 1], label='Original Data', alpha=0.6, c='blue')
         plt.scatter(generated_data[:, 0], generated_data[:, 1], label='Generated Data', alpha=0.6, c='red')
         plt.legend()
-        plt.title(f"t-SNE visualization of {self.dataset_name}-{epoch}")
+        plt.title(f"t-SNE visualization of {self.dataset_name}-GAN {epoch}")
         plt.xlabel("t-SNE feature 1")
         plt.ylabel("t-SNE feature 2")
         plt.savefig(f"./result/{self.dataset_name}/t-SNE_{epoch}.png")
         plt.show()
 
 
+class SMOTETsne:
+    def __init__(self, dataset_name):
+        self.dataset_name = dataset_name
+        self.X_train = None
+        self.y_train = None
+        self.X_real = None
+        self.y_real = None
+        self._load_dataset()
+
+    def _load_dataset(self):
+        dataset = DatasetsLoader.Dataset(dataset_name=self.dataset_name)
+        X, y = dataset.GetDataset()
+        X_train, y_train, _, _ = split_dataset_random(X, y)
+        self.X_train = X_train
+        self.y_train = y_train
+        self._set_real_data()
+
+    def _set_real_data(self):
+        self.X_real, self.y_real = GANs_two_class_real_data(self.X_train, self.y_train)
+
+    def draw_and_save(self):
+        X_train_SMOTE, y_train_SMOTE = SMOTE().fit_resample(self.X_train, self.y_train)
+        X_train_SMOTE_gen = X_train_SMOTE[self.X_train.shape[0]:]
+        X_train_SMOTE_sel = resample(X_train_SMOTE_gen, n_samples=self.X_real.shape[0])
+
+        if self.X_real.shape[0] <= 150:
+            perplexity = self.X_real.shape[0] / 2
+        else:
+            perplexity = 100
+
+        real_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(self.X_real)
+        generated_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(X_train_SMOTE_sel)
+
+        print(trustworthiness(self.X_real, real_data, n_neighbors=5))
+        print(trustworthiness(X_train_SMOTE_sel, generated_data, n_neighbors=5))
+
+        plt.figure(figsize=(10, 8))
+        plt.scatter(real_data[:, 0], real_data[:, 1], label='Original Data', alpha=0.6, c='blue')
+        plt.scatter(generated_data[:, 0], generated_data[:, 1], label='Generated Data', alpha=0.6, c='red')
+        plt.legend()
+        plt.title(f"t-SNE visualization of {self.dataset_name}-SMOTE")
+        plt.xlabel("t-SNE feature 1")
+        plt.ylabel("t-SNE feature 2")
+        plt.savefig(f"./result/{self.dataset_name}/t-SNE_{SMOTE}.png")
+        plt.show()
+
+
 if __name__ == "__main__":
     for i in DatasetsLoader.Datasets_list:
+    # for i in ['SouthGermanCredit']:
         print("Start training for dataset: ", i)
-        obj = Tsne(dataset_name=i, device=get_default_device(force_skip_mps=True))
+        obj = GANTsne(dataset_name=i, device=get_default_device(force_skip_mps=False))
         obj.fit()
         obj.draw_and_save(epoch=10)
         obj.draw_and_save(epoch=50)
         obj.draw_and_save(epoch=100)
         obj.draw_and_save(epoch=149)
+        smote_obj = SMOTETsne(dataset_name=i)
+        smote_obj.draw_and_save()
 

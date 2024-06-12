@@ -15,7 +15,7 @@ def split_dataset_random(X, y):
     return X_train, y_train, X_test, y_test
 
 
-dataset = Dataset("PredictTerm")
+dataset = Dataset("SouthGermanCredit")
 X, y = dataset.GetDataset()
 X_train, y_train, X_test, y_test = split_dataset_random(X, y)
 X_train_SMOTE, y_train_SMOTE = SMOTE().fit_resample(X_train, y_train)

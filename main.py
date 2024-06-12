@@ -47,7 +47,7 @@ class GANTsne:
         try:
             with open(f"checkpoint/{self.dataset_name}/checkpoints.json", "r") as f:
                 config = json.load(f)
-            if self.epochs == config["epochs"] and self.batch_size == config["batch_size"] and self.lr == config["lr"]:
+            if self.epochs == config["epochs"] and self.batch_size == config["batch_size"] and self.lr == config["lr"] and self.device == config["device"]:
                 reuse = True
             else:
                 reuse = False
@@ -60,7 +60,7 @@ class GANTsne:
         if not self._pre_trained():
             get_generator(self.X_train, self.X_real, self.y_real, self.device, self.lr, self.epochs, self.batch_size, 1, 0, dataset_name=self.dataset_name)
             with open(f"checkpoint/{self.dataset_name}/checkpoints.json", "w") as f:
-                config = {"epochs": self.epochs, "lr": self.lr, "batch_size": self.batch_size}
+                config = {"epochs": self.epochs, "lr": self.lr, "batch_size": self.batch_size, "device": self.device}
                 json.dump(config, f)
         else:
             print("Found pre-trained model, skipping training")

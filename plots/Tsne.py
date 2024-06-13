@@ -8,7 +8,6 @@ from myutil import split_dataset_random, GANs_two_class_real_data, ModelNotFitEx
 import json
 import os
 from imblearn.over_sampling import SMOTE
-from sklearn.utils import resample
 from ctgan import CTGAN
 import numpy as np
 from PIL import Image
@@ -85,15 +84,18 @@ class GANTsne:
         else:
             perplexity = 50
 
-        real_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(self.X_real)
-        generated_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(output)
+        X_total = np.concatenate((self.X_real, output), axis=0)
+        X_embedded = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(X_total)
 
-        print(trustworthiness(self.X_real, real_data, n_neighbors=5))
-        print(trustworthiness(output, generated_data, n_neighbors=5))
+        print(trustworthiness(X_total, X_embedded, n_neighbors=5))
+
+        num_real_samples = self.X_real.shape[0]
 
         plt.figure(figsize=(10, 8))
-        plt.scatter(real_data[:, 0], real_data[:, 1], label='Original Data', alpha=0.6, c='blue')
-        plt.scatter(generated_data[:, 0], generated_data[:, 1], label='Generated Data', alpha=0.6, c='red')
+        plt.scatter(X_embedded[:num_real_samples, 0], X_embedded[:num_real_samples, 1], label='Original Data',
+                    alpha=0.6, c='blue')
+        plt.scatter(X_embedded[num_real_samples:, 0], X_embedded[num_real_samples:, 1], label='Generated Data',
+                    alpha=0.6, c='red')
         plt.legend()
         plt.title(f"t-SNE visualization of {self.dataset_name}-GAN {epoch+1}")
         plt.xlabel("t-SNE feature 1")
@@ -126,25 +128,29 @@ class SMOTETsne:
         X_train_SMOTE, y_train_SMOTE = SMOTE().fit_resample(self.X_train, self.y_train)
         X_train_SMOTE_gen = X_train_SMOTE[self.X_train.shape[0]:]
         y_train_SMOTE_gen = y_train_SMOTE[self.X_train.shape[0]:]
-        print(y_train_SMOTE_gen)
-        print(len(X_train_SMOTE_gen))
-        print(self.X_real.shape[0])
-        X_train_SMOTE_sel = resample(X_train_SMOTE_gen, n_samples=self.X_real.shape[0])
+        if len(X_train_SMOTE_gen) < len(self.X_real):
+            X_train_SMOTE_sel = X_train_SMOTE_gen
+        else:
+            X_train_SMOTE_sel = X_train_SMOTE_gen[np.random.choice(X_train_SMOTE_gen.shape[0], size=self.X_real.shape[0], replace=False)]
 
-        if self.X_real.shape[0] <= 155:
+        if self.X_real.shape[0] <= 75:
             perplexity = self.X_real.shape[0] / 2
         else:
-            perplexity = 150
+            perplexity = 50
 
-        real_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(self.X_real)
-        generated_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(X_train_SMOTE_sel)
+        X_total = np.concatenate((self.X_real, X_train_SMOTE_sel), axis=0)
+        X_embedded = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(
+            X_total)
 
-        print(trustworthiness(self.X_real, real_data, n_neighbors=5))
-        print(trustworthiness(X_train_SMOTE_sel, generated_data, n_neighbors=5))
+        print(trustworthiness(X_total, X_embedded, n_neighbors=5))
+
+        num_real_samples = self.X_real.shape[0]
 
         plt.figure(figsize=(10, 8))
-        plt.scatter(real_data[:, 0], real_data[:, 1], label='Original Data', alpha=0.6, c='blue')
-        plt.scatter(generated_data[:, 0], generated_data[:, 1], label='Generated Data', alpha=0.6, c='red')
+        plt.scatter(X_embedded[:num_real_samples, 0], X_embedded[:num_real_samples, 1], label='Original Data',
+                    alpha=0.6, c='blue')
+        plt.scatter(X_embedded[num_real_samples:, 0], X_embedded[num_real_samples:, 1], label='Generated Data',
+                    alpha=0.6, c='red')
         plt.legend()
         plt.title(f"t-SNE visualization of {self.dataset_name}-SMOTE")
         plt.xlabel("t-SNE feature 1")
@@ -178,15 +184,19 @@ class CTGANTsne(SMOTETsne):
         else:
             perplexity = 50
 
-        real_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(self.X_real)
-        generated_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(X_train_ctgan)
+        X_total = np.concatenate((self.X_real, X_train_ctgan), axis=0)
+        X_embedded = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(
+            X_total)
 
-        print(trustworthiness(self.X_real, real_data, n_neighbors=5))
-        print(trustworthiness(X_train_ctgan, generated_data, n_neighbors=5))
+        print(trustworthiness(X_total, X_embedded, n_neighbors=5))
+
+        num_real_samples = self.X_real.shape[0]
 
         plt.figure(figsize=(10, 8))
-        plt.scatter(real_data[:, 0], real_data[:, 1], label='Original Data', alpha=0.6, c='blue')
-        plt.scatter(generated_data[:, 0], generated_data[:, 1], label='Generated Data', alpha=0.6, c='red')
+        plt.scatter(X_embedded[:num_real_samples, 0], X_embedded[:num_real_samples, 1], label='Original Data',
+                    alpha=0.6, c='blue')
+        plt.scatter(X_embedded[num_real_samples:, 0], X_embedded[num_real_samples:, 1], label='Generated Data',
+                    alpha=0.6, c='red')
         plt.legend()
         plt.title(f"t-SNE visualization of {self.dataset_name}-CTGAN")
         plt.xlabel("t-SNE feature 1")

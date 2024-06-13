@@ -10,9 +10,9 @@ if __name__ == "__main__":
 
         gan_obj = GANTsne(dataset_name=i, device=get_default_device(force_skip_mps=False))
         gan_obj.fit()
-        gan_obj.draw_and_save(epoch=10)
-        gan_obj.draw_and_save(epoch=50)
-        gan_obj.draw_and_save(epoch=100)
+        gan_obj.draw_and_save(epoch=9)
+        gan_obj.draw_and_save(epoch=49)
+        gan_obj.draw_and_save(epoch=99)
         gan_obj.draw_and_save(epoch=149)
 
         smote_obj = SMOTETsne(dataset_name=i)

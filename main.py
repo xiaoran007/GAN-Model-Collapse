@@ -170,10 +170,10 @@ class CTGANTsne(SMOTETsne):
         X_train_ctgan = np.concatenate([synthetic_data_x, self.X_train], axis=0)
         y_train_ctgan = np.concatenate([synthetic_data_y, self.y_train], axis=0)
 
-        if self.X_real.shape[0] <= 150:
+        if self.X_real.shape[0] <= 75:
             perplexity = self.X_real.shape[0] / 2
         else:
-            perplexity = 100
+            perplexity = 50
 
         real_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(self.X_real)
         generated_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(X_train_ctgan)
@@ -219,8 +219,8 @@ class Imgs:
 
 
 if __name__ == "__main__":
-    # for i in DatasetsLoader.Datasets_list:
-    for i in ['SouthGermanCredit']:
+    for i in DatasetsLoader.Datasets_list:
+    # for i in ['SouthGermanCredit']:
         print("Start training for dataset: ", i)
 
         gan_obj = GANTsne(dataset_name=i, device=get_default_device(force_skip_mps=False))

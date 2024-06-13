@@ -4,11 +4,14 @@ import torch
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.manifold import trustworthiness
-from myutil import split_dataset_random, GANs_two_class_real_data
+from myutil import split_dataset_random, GANs_two_class_real_data, ModelNotFitException
 import json
 import os
 from imblearn.over_sampling import SMOTE
 from sklearn.utils import resample
+from ctgan import CTGAN
+import numpy as np
+from PIL import Image
 
 
 class GANTsne:
@@ -146,16 +149,94 @@ class SMOTETsne:
         plt.show()
 
 
+class CTGANTsne(SMOTETsne):
+    def __init__(self, dataset_name):
+        super().__init__(dataset_name)
+        self.CTGAN = None
+
+    def fit(self):
+        self.CTGAN = CTGAN(batch_size=500, epochs=100, cuda=True, verbose=True)
+        X_train_fraud = self.X_train[self.y_train == 1]
+        self.CTGAN.fit(X_train_fraud)
+
+    def draw_and_save(self):
+        if self.CTGAN is None:
+            raise ModelNotFitException
+
+        # num_samples = np.count_nonzero(self.y_train == 0) - np.count_nonzero(self.y_train == 1)
+        num_samples = np.count_nonzero(self.y_train == 1)
+        synthetic_data_x = self.CTGAN.sample(num_samples)
+        synthetic_data_y = np.ones(num_samples)
+        X_train_ctgan = np.concatenate([synthetic_data_x, self.X_train], axis=0)
+        y_train_ctgan = np.concatenate([synthetic_data_y, self.y_train], axis=0)
+
+        if self.X_real.shape[0] <= 150:
+            perplexity = self.X_real.shape[0] / 2
+        else:
+            perplexity = 100
+
+        real_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(self.X_real)
+        generated_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(X_train_ctgan)
+
+        print(trustworthiness(self.X_real, real_data, n_neighbors=5))
+        print(trustworthiness(X_train_ctgan, generated_data, n_neighbors=5))
+
+        plt.figure(figsize=(10, 8))
+        plt.scatter(real_data[:, 0], real_data[:, 1], label='Original Data', alpha=0.6, c='blue')
+        plt.scatter(generated_data[:, 0], generated_data[:, 1], label='Generated Data', alpha=0.6, c='red')
+        plt.legend()
+        plt.title(f"t-SNE visualization of {self.dataset_name}-CTGAN")
+        plt.xlabel("t-SNE feature 1")
+        plt.ylabel("t-SNE feature 2")
+        plt.savefig(f"./result/{self.dataset_name}/t-SNE_CTGAN.png")
+        plt.show()
+
+
+class Imgs:
+    def __init__(self, dataset_name):
+        self.dataset_name = dataset_name
+
+    def draw_and_save(self):
+        image1 = Image.open(f"./result/{self.dataset_name}/t-SNE_10.png")
+        image2 = Image.open(f"./result/{self.dataset_name}/t-SNE_50.png")
+        image3 = Image.open(f"./result/{self.dataset_name}/t-SNE_100.png")
+        image4 = Image.open(f"./result/{self.dataset_name}/t-SNE_149.png")
+        image5 = Image.open(f"./result/{self.dataset_name}/t-SNE_CTGAN.png")
+        image6 = Image.open(f"./result/{self.dataset_name}/t-SNE_SMOTE.png")
+
+        width, height = image1.size
+
+        combined_image = Image.new('RGB', (width * 3, height * 2))
+
+        combined_image.paste(image1, (0, 0))
+        combined_image.paste(image2, (width, 0))
+        combined_image.paste(image3, (width * 2, 0))
+        combined_image.paste(image4, (0, height))
+        combined_image.paste(image5, (width, height))
+        combined_image.paste(image6, (width * 2, height))
+
+        combined_image.save(f"./result/{self.dataset_name}/combined.png")
+
+
 if __name__ == "__main__":
-    for i in DatasetsLoader.Datasets_list:
-    # for i in ['SouthGermanCredit']:
+    # for i in DatasetsLoader.Datasets_list:
+    for i in ['SouthGermanCredit']:
         print("Start training for dataset: ", i)
-        obj = GANTsne(dataset_name=i, device=get_default_device(force_skip_mps=False))
-        obj.fit()
-        obj.draw_and_save(epoch=10)
-        obj.draw_and_save(epoch=50)
-        obj.draw_and_save(epoch=100)
-        obj.draw_and_save(epoch=149)
+
+        gan_obj = GANTsne(dataset_name=i, device=get_default_device(force_skip_mps=False))
+        gan_obj.fit()
+        gan_obj.draw_and_save(epoch=10)
+        gan_obj.draw_and_save(epoch=50)
+        gan_obj.draw_and_save(epoch=100)
+        gan_obj.draw_and_save(epoch=149)
+
         smote_obj = SMOTETsne(dataset_name=i)
         smote_obj.draw_and_save()
+
+        ctgan_obj = CTGANTsne(dataset_name=i)
+        ctgan_obj.fit()
+        ctgan_obj.draw_and_save()
+
+        imgs_obj = Imgs(dataset_name=i)
+        imgs_obj.draw_and_save()
 

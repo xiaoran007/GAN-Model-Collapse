@@ -95,10 +95,10 @@ class GANTsne:
         plt.scatter(real_data[:, 0], real_data[:, 1], label='Original Data', alpha=0.6, c='blue')
         plt.scatter(generated_data[:, 0], generated_data[:, 1], label='Generated Data', alpha=0.6, c='red')
         plt.legend()
-        plt.title(f"t-SNE visualization of {self.dataset_name}-GAN {epoch}")
+        plt.title(f"t-SNE visualization of {self.dataset_name}-GAN {epoch+1}")
         plt.xlabel("t-SNE feature 1")
         plt.ylabel("t-SNE feature 2")
-        plt.savefig(f"./result/{self.dataset_name}/t-SNE_{epoch}.png")
+        plt.savefig(f"./result/{self.dataset_name}/t-SNE_{epoch+1}.png")
         # plt.show()
 
 
@@ -164,11 +164,10 @@ class CTGANTsne(SMOTETsne):
             raise ModelNotFitException
 
         # num_samples = np.count_nonzero(self.y_train == 0) - np.count_nonzero(self.y_train == 1)
-        num_samples = np.count_nonzero(self.y_train == 1)
+        num_samples = self.X_real.shape[0]
         synthetic_data_x = self.CTGAN.sample(num_samples)
         synthetic_data_y = np.ones(num_samples)
-        X_train_ctgan = np.concatenate([synthetic_data_x, self.X_train], axis=0)
-        y_train_ctgan = np.concatenate([synthetic_data_y, self.y_train], axis=0)
+        X_train_ctgan = synthetic_data_x
 
         if self.X_real.shape[0] <= 75:
             perplexity = self.X_real.shape[0] / 2
@@ -200,7 +199,7 @@ class Imgs:
         image1 = Image.open(f"./result/{self.dataset_name}/t-SNE_10.png")
         image2 = Image.open(f"./result/{self.dataset_name}/t-SNE_50.png")
         image3 = Image.open(f"./result/{self.dataset_name}/t-SNE_100.png")
-        image4 = Image.open(f"./result/{self.dataset_name}/t-SNE_149.png")
+        image4 = Image.open(f"./result/{self.dataset_name}/t-SNE_150.png")
         image5 = Image.open(f"./result/{self.dataset_name}/t-SNE_CTGAN.png")
         image6 = Image.open(f"./result/{self.dataset_name}/t-SNE_SMOTE.png")
 

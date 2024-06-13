@@ -7,6 +7,7 @@ GAN Model Collapse
 * tqdm
 * scikit-learn
 * pandas
-* imbalanced-learn
+* imbalanced-learn （conda-forge）
 * statsmodels
 * matplotlib
+* ctgan (pip)

@@ -1,12 +1,13 @@
-from GAN import get_default_device, get_generator, Generator, Discriminator
+import pandas as pd
+from imblearn.over_sampling import SMOTE
+from DatasetsLoader import Dataset
 from sklearn.model_selection import train_test_split
-import numpy as np
-import DatasetsLoader
-import torch
+from sklearn.utils.random import sample_without_replacement
+from sklearn.utils import resample
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 from sklearn.manifold import trustworthiness
-
+import numpy as np
 
 def split_dataset_random(X, y):
     # Split dataset into 7:1:2 for training : validation : testing
@@ -14,6 +15,31 @@ def split_dataset_random(X, y):
 
     return X_train, y_train, X_test, y_test
 
+
+dataset = Dataset("CreditCard")
+X, y = dataset.GetDataset()
+X_train, y_train, X_test, y_test = split_dataset_random(X, y)
+X_train_SMOTE, y_train_SMOTE = SMOTE().fit_resample(X_train, y_train)
+
+minor, major = 0, 0
+for i in y_train:
+    if i == 1:
+        minor += 1
+    else:
+        major += 1
+print(f"minor: {minor}, major: {major}")
+
+minor, major = 0, 0
+for i in y_train_SMOTE:
+    if i == 1:
+        minor += 1
+    else:
+        major += 1
+print(f"minor: {minor}, major: {major}")
+
+
+print(X_train.shape)
+print(X_train_SMOTE.shape)
 
 def GANs_two_class_real_data(X_train, y_train):  # Defining the real data for GANs
     X_real = []
@@ -25,70 +51,33 @@ def GANs_two_class_real_data(X_train, y_train):  # Defining the real data for GA
     y_real = np.ones((X_real.shape[0],))
     return X_real, y_real
 
-
-def load_checkpoint(name, dataset_name):
-    generator = Generator(X_train.shape[1], X_train.shape[1], 128)
-    discriminator = Discriminator(X_train.shape[1], 128)
-    checkpoint = torch.load(f"checkpoint/{dataset_name}/checkpoint_{name}.pth")
-    generator.load_state_dict(checkpoint['generator'])
-    discriminator.load_state_dict(checkpoint['discriminator'])
-    return generator, discriminator
-
-
-def get_minor_major(y):
-    minor, major = 0, 0
-    for i in y:
-        if i == 1:
-            minor += 1
-        else:
-            major += 1
-    return minor, major
-
-
-
-dataset = DatasetsLoader.Dataset(dataset_name="PredictTerm")
-X, y = dataset.GetDataset()
-X_train, y_train, X_test, y_test = split_dataset_random(X, y)
-lr = 0.0002
-epochs = 100
-batch_size = 128
-device = get_default_device(force_to_cpu=False, force_skip_mps=True)
-
-print(f"data size: {len(y_train)}")
 X_real, y_real = GANs_two_class_real_data(X_train, y_train)
-print(f"real data size: {len(y_real)}")
-generator_G = get_generator(X_train, X_real, y_real, device, lr, epochs, batch_size, 1, 0, dataset_name="PredictTerm")
-#
-# generator, discriminator = load_checkpoint(epochs-1, dataset_name="PredictTerm")
-generator, discriminator = load_checkpoint(50, dataset_name="PredictTerm")
-generator.eval()
+X_train_SMOTE_gen = X_train_SMOTE[X_train.shape[0]:]
+X_train_SMOTE_sel = resample(X_train_SMOTE_gen, n_samples=X_real.shape[0])
 
-minor, major = get_minor_major(y_train)
-need_gen = major - minor
-GANs_noise = torch.randn((X_real.shape[0]), (X_real.shape[1]), device=device)
-output = generator(GANs_noise.float().to(device)).cpu().detach().numpy()
-print(output)
-print(len(output))
+print(type(X_train_SMOTE_sel))
 
+columns = [f'feature{i+1}' for i in range(X_real.shape[1])]
+original_data = pd.DataFrame(X_real, columns=columns)
+generated_data = pd.DataFrame(X_train_SMOTE_sel, columns=columns)
 
-X = X_real
-y = y_real
+features = original_data.columns
+n_features = len(features)
 
-tsne = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=100)
-X_embedded = tsne.fit_transform(X)
+# Create a figure with subplots in a grid with 3 columns
+n_cols = 3
+n_rows = (n_features + n_cols - 1) // n_cols  # Calculate the number of rows needed
 
-x_gen = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=100).fit_transform(output)
+plt.figure(figsize=(20, n_rows * 5))
 
-print(trustworthiness(X, X_embedded, n_neighbors=5))
-print(trustworthiness(output, x_gen, n_neighbors=5))
+for i, feature in enumerate(features):
+    plt.subplot(n_rows, n_cols, i + 1)
+    plt.hist(original_data[feature], bins=30, alpha=0.7, label='Original', color='blue')
+    plt.hist(generated_data[feature], bins=30, alpha=0.7, label='Generated', color='orange')
+    plt.title(f'Histogram of {feature}')
+    plt.xlabel(feature)
+    plt.ylabel('Frequency')
+    plt.legend()
 
-plt.figure(figsize=(10, 8))
-plt.scatter(X_embedded[:, 0], X_embedded[:, 1], label='Original Data', alpha=0.6, c='blue')
-plt.scatter(x_gen[:, 0], x_gen[:, 1], label='Generated Data', alpha=0.6, c='red')
-plt.legend()
-plt.title("t-SNE visualization of Original and Generated Data")
-plt.xlabel("t-SNE feature 1")
-plt.ylabel("t-SNE feature 2")
-plt.savefig("./result/PredictTerm/t-SNE.png")
+plt.tight_layout()
 plt.show()
-

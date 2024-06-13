@@ -99,7 +99,7 @@ class GANTsne:
         plt.xlabel("t-SNE feature 1")
         plt.ylabel("t-SNE feature 2")
         plt.savefig(f"./result/{self.dataset_name}/t-SNE_{epoch}.png")
-        plt.show()
+        # plt.show()
 
 
 class SMOTETsne:
@@ -146,7 +146,7 @@ class SMOTETsne:
         plt.xlabel("t-SNE feature 1")
         plt.ylabel("t-SNE feature 2")
         plt.savefig(f"./result/{self.dataset_name}/t-SNE_SMOTE.png")
-        plt.show()
+        # plt.show()
 
 
 class CTGANTsne(SMOTETsne):
@@ -189,7 +189,7 @@ class CTGANTsne(SMOTETsne):
         plt.xlabel("t-SNE feature 1")
         plt.ylabel("t-SNE feature 2")
         plt.savefig(f"./result/{self.dataset_name}/t-SNE_CTGAN.png")
-        plt.show()
+        # plt.show()
 
 
 class Imgs:

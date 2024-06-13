@@ -80,10 +80,10 @@ class GANTsne:
         GANs_noise = torch.randn((self.X_real.shape[0]), (self.X_real.shape[1]), device=self.device)
         output = generator(GANs_noise.float().to(self.device)).cpu().detach().numpy()
 
-        if self.X_real.shape[0] <= 150:
+        if self.X_real.shape[0] <= 75:
             perplexity = self.X_real.shape[0] / 2
         else:
-            perplexity = 100
+            perplexity = 50
 
         real_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(self.X_real)
         generated_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(output)
@@ -125,12 +125,16 @@ class SMOTETsne:
     def draw_and_save(self):
         X_train_SMOTE, y_train_SMOTE = SMOTE().fit_resample(self.X_train, self.y_train)
         X_train_SMOTE_gen = X_train_SMOTE[self.X_train.shape[0]:]
+        y_train_SMOTE_gen = y_train_SMOTE[self.X_train.shape[0]:]
+        print(y_train_SMOTE_gen)
+        print(len(X_train_SMOTE_gen))
+        print(self.X_real.shape[0])
         X_train_SMOTE_sel = resample(X_train_SMOTE_gen, n_samples=self.X_real.shape[0])
 
-        if self.X_real.shape[0] <= 150:
+        if self.X_real.shape[0] <= 155:
             perplexity = self.X_real.shape[0] / 2
         else:
-            perplexity = 100
+            perplexity = 150
 
         real_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(self.X_real)
         generated_data = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(X_train_SMOTE_sel)

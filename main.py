@@ -5,7 +5,7 @@ from plots import GANTsne, SMOTETsne, CTGANTsne, Imgs
 
 if __name__ == "__main__":
     # for i in DatasetsLoader.Datasets_list:
-    for i in ['SouthGermanCredit']:
+    for i in ['BankNote']:
         print("Start training for dataset: ", i)
 
         gan_obj = GANTsne(dataset_name=i, device=get_default_device(force_skip_mps=False))

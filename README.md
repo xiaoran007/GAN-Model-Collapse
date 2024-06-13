@@ -11,3 +11,4 @@ GAN Model Collapse
 * statsmodels
 * matplotlib
 * ctgan (pip)
+* pillow

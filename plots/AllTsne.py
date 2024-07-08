@@ -1,10 +1,8 @@
 from plots import GANTsne, SMOTETsne, CTGANTsne
 import torch
-from myutil import split_dataset_random, GANs_two_class_real_data, ModelNotFitException
-import json
+from myutil import ModelNotFitException
 import os
 from imblearn.over_sampling import SMOTE
-from ctgan import CTGAN
 import numpy as np
 from sklearn.manifold import TSNE
 from sklearn.manifold import trustworthiness
@@ -12,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 class AllTsne:
-    def __init__(self, dataset_name, device, epochs: list=None):
+    def __init__(self, dataset_name, device, epochs: list = None):
         if epochs is None:
             epochs = [9, 49, 99, 149]
         self.dataset_name = dataset_name
@@ -72,7 +70,7 @@ class AllTsne:
         self._plot(real_emb, smote_emb, "SMOTE")
         self._plot(real_emb, ctgan_emb, "CTGAN")
 
-    def _plot(self, real, gen, model: str, epoch: int=0):
+    def _plot(self, real, gen, model: str, epoch: int = 0):
         plt.figure(figsize=(10, 8))
         plt.scatter(real[:, 0], real[:, 1], label='Original Data',
                     alpha=0.6, c='blue')
@@ -95,7 +93,6 @@ class AllTsne:
             plt.xlabel("t-SNE feature 1")
             plt.ylabel("t-SNE feature 2")
             plt.savefig(f"./result/{self.dataset_name}/t-SNE_CTGAN.png")
-
 
 
 class GANTsneHelper(GANTsne):
@@ -146,4 +143,3 @@ class CTGANTsneHelper(CTGANTsne):
         X_train_ctgan = synthetic_data_x
 
         return X_train_ctgan
-

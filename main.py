@@ -1,6 +1,6 @@
 from GAN import get_default_device
 import DatasetsLoader
-from plots import GANTsne, SMOTETsne, CTGANTsne, Imgs, TsneInit, AllTsne
+from plots import GANTsne, SMOTETsne, CTGANTsne, Imgs, TsneInit, AllTsne, AllTsneWithMajority
 
 
 if __name__ == "__main__":
@@ -8,7 +8,7 @@ if __name__ == "__main__":
     # for i in ['BankNote']:
         print("Start training for dataset: ", i)
 
-        all_tsne_obj = AllTsne(dataset_name=i, device=get_default_device(force_skip_mps=False))
+        all_tsne_obj = AllTsneWithMajority(dataset_name=i, device=get_default_device(force_skip_mps=False))
         all_tsne_obj.fit()
 
         # init_obj = TsneInit(dataset_name=i)

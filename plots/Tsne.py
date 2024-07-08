@@ -1,4 +1,4 @@
-from GAN import get_default_device, get_generator, Generator, Discriminator
+from GAN import get_generator, Generator, Discriminator
 import DatasetsLoader
 import torch
 import matplotlib.pyplot as plt
@@ -11,6 +11,43 @@ from imblearn.over_sampling import SMOTE
 from ctgan import CTGAN
 import numpy as np
 from PIL import Image
+import pandas as pd
+
+
+class TsneInit:
+    def __init__(self, dataset_name):
+        self.dataset_name = dataset_name
+        self.X_train = None
+        self.y_train = None
+        self.X_real = None
+        self.y_real = None
+        self.TsneInitReal = None
+        self._load_dataset()
+
+    def _load_dataset(self):
+        dataset = DatasetsLoader.Dataset(dataset_name=self.dataset_name)
+        X, y = dataset.GetDataset()
+        X_train, y_train, _, _ = split_dataset_random(X, y)
+        self.X_train = X_train
+        self.y_train = y_train
+        self._set_real_data()
+
+    def _set_real_data(self):
+        self.X_real, self.y_real = GANs_two_class_real_data(self.X_train, self.y_train)
+
+    def fit(self):
+        if self.X_real.shape[0] <= 75:
+            perplexity = self.X_real.shape[0] / 2
+        else:
+            perplexity = 50
+        tsne_real = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(self.X_real)
+        self.TsneInitReal = tsne_real
+
+    def getTsneInitReal(self):
+        if self.TsneInitReal is None:
+            raise ModelNotFitException("TsneInitReal hasn't been fit yet")
+        else:
+            return self.TsneInitReal
 
 
 class GANTsne:
@@ -67,7 +104,7 @@ class GANTsne:
         else:
             print("Found pre-trained model, skipping training")
 
-    def draw_and_save(self, epoch):
+    def draw_and_save(self, epoch, init_real):
         assert epoch in range(self.epochs)
         if os.path.exists(f"./result/{self.dataset_name}"):
             pass
@@ -85,7 +122,11 @@ class GANTsne:
             perplexity = 50
 
         X_total = np.concatenate((self.X_real, output), axis=0)
-        X_embedded = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(X_total)
+        if init_real is None:
+            init = "pca"
+        else:
+            init = np.vstack([init_real, np.zeros((output.shape[0], 2))])
+        X_embedded = TSNE(init=init, n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(X_total)
 
         print(trustworthiness(X_total, X_embedded, n_neighbors=5))
 
@@ -124,7 +165,7 @@ class SMOTETsne:
     def _set_real_data(self):
         self.X_real, self.y_real = GANs_two_class_real_data(self.X_train, self.y_train)
 
-    def draw_and_save(self):
+    def draw_and_save(self, init_real):
         X_train_SMOTE, y_train_SMOTE = SMOTE().fit_resample(self.X_train, self.y_train)
         X_train_SMOTE_gen = X_train_SMOTE[self.X_train.shape[0]:]
         y_train_SMOTE_gen = y_train_SMOTE[self.X_train.shape[0]:]
@@ -139,7 +180,11 @@ class SMOTETsne:
             perplexity = 50
 
         X_total = np.concatenate((self.X_real, X_train_SMOTE_sel), axis=0)
-        X_embedded = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(
+        if init_real is None:
+            init = "pca"
+        else:
+            init = np.vstack([init_real, np.zeros((X_train_SMOTE_sel.shape[0], 2))])
+        X_embedded = TSNE(init=init, n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(
             X_total)
 
         print(trustworthiness(X_total, X_embedded, n_neighbors=5))
@@ -169,7 +214,7 @@ class CTGANTsne(SMOTETsne):
         X_train_fraud = self.X_train[self.y_train == 1]
         self.CTGAN.fit(X_train_fraud)
 
-    def draw_and_save(self):
+    def draw_and_save(self, init_real):
         if self.CTGAN is None:
             raise ModelNotFitException
 
@@ -185,7 +230,11 @@ class CTGANTsne(SMOTETsne):
             perplexity = 50
 
         X_total = np.concatenate((self.X_real, X_train_ctgan), axis=0)
-        X_embedded = TSNE(n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(
+        if init_real is None:
+            init = "pca"
+        else:
+            init = np.vstack([init_real, np.zeros((X_train_ctgan.shape[0], 2))])
+        X_embedded = TSNE(init=init, n_components=2, random_state=42, verbose=1, angle=0.2, perplexity=perplexity).fit_transform(
             X_total)
 
         print(trustworthiness(X_total, X_embedded, n_neighbors=5))
@@ -232,26 +281,7 @@ class Imgs:
 
 
 if __name__ == "__main__":
-    for i in DatasetsLoader.Datasets_list:
-    # for i in ['SouthGermanCredit']:
-        print("Start training for dataset: ", i)
-
-        gan_obj = GANTsne(dataset_name=i, device=get_default_device(force_skip_mps=False))
-        gan_obj.fit()
-        gan_obj.draw_and_save(epoch=10)
-        gan_obj.draw_and_save(epoch=50)
-        gan_obj.draw_and_save(epoch=100)
-        gan_obj.draw_and_save(epoch=149)
-
-        smote_obj = SMOTETsne(dataset_name=i)
-        smote_obj.draw_and_save()
-
-        ctgan_obj = CTGANTsne(dataset_name=i)
-        ctgan_obj.fit()
-        ctgan_obj.draw_and_save()
-
-        imgs_obj = Imgs(dataset_name=i)
-        imgs_obj.draw_and_save()
+    pass
 
 
 

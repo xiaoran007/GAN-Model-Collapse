@@ -19,6 +19,17 @@ def GANs_two_class_real_data(X_train, y_train):
     return X_real, y_real
 
 
+def GANs_two_class_majority_data(X_train, y_train):
+    X_majority = []
+    y_train = y_train.ravel()
+    for i in range(len(y_train)):
+        if int(y_train[i]) == 0:
+            X_majority.append(X_train[i])
+    X_majority = np.array(X_majority)
+    y_majority = np.zeros((X_majority.shape[0],))
+    return X_majority, y_majority
+
+
 def get_minor_major(y):
     minor, major = 0, 0
     for i in y:

@@ -4,8 +4,10 @@ from plots import GANTsne, SMOTETsne, CTGANTsne, Imgs, TsneInit, AllTsne, AllTsn
 
 
 if __name__ == "__main__":
-    for i in DatasetsLoader.Datasets_list:
-    # for i in ['BankNote']:
+    # for i in DatasetsLoader.Datasets_list:
+    for i in ['BankNote']:
+        if i in ["CreditCard", "PredictTerm"]:
+            continue
         print("Start training for dataset: ", i)
 
         all_tsne_obj = AllTsneWithMajority(dataset_name=i, device=get_default_device(force_skip_mps=False))
